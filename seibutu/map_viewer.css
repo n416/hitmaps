@@ -10,6 +10,7 @@ body {
     color: #ffffff;
     overflow: hidden; /* スクロールバーを隠す */
     user-select: none;
+    touch-action: none; /* スマホのネイティブスワイプ/ズームを無効化 */
 }
 
 /* 3D Scene Setup */
@@ -23,6 +24,7 @@ body {
     z-index: 1;
     overflow: hidden;
     cursor: grab;
+    touch-action: none;
 }
 
 #scene:active {

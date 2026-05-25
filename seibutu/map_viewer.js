@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 editBtn.className = 'pin-action-btn';
                 editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
                 editBtn.title = '編集';
-                editBtn.addEventListener('mousedown', (de) => {
+                editBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
                     openPinModal(p.id);
                 });
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.className = 'pin-action-btn delete';
                 delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                 delBtn.title = '削除';
-                delBtn.addEventListener('mousedown', (de) => {
+                delBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
                     customPins = customPins.filter(pin => pin.id !== p.id);
                     selectedObject = null;
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.appendChild(actionsDiv);
             }
 
-            el.addEventListener('mousedown', (e) => {
+            el.addEventListener('pointerdown', (e) => {
                 let toolChanged = false;
                 if (currentTool !== 'move') {
                     selectTool('move');
@@ -191,8 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 const onUp = () => {
-                    window.removeEventListener('mousemove', onMove);
-                    window.removeEventListener('mouseup', onUp);
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
                     
                     if (!isDragged && wasSelected) {
                         // 既に選択済みの状態でのクリック時のみ、垂直・水平をトグルする
@@ -202,8 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveData();
                 };
                 
-                window.addEventListener('mousemove', onMove);
-                window.addEventListener('mouseup', onUp);
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
             });
             mapContainer.appendChild(el);
         });
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 g.insertBefore(bbox, visualPath); // パスの裏に配置
             }
             
-            g.addEventListener('mousedown', (e) => {
+            g.addEventListener('pointerdown', (e) => {
                 let toolChanged = false;
                 if (currentTool !== 'move') {
                     selectTool('move');
@@ -367,13 +367,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 const onUp = () => {
-                    window.removeEventListener('mousemove', onMove);
-                    window.removeEventListener('mouseup', onUp);
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
                     saveData();
                 };
                 
-                window.addEventListener('mousemove', onMove);
-                window.addEventListener('mouseup', onUp);
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
             });
             arrowLayer.appendChild(g);
 
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         delBtn.className = 'arrow-delete-btn';
                         delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                         delBtn.title = '矢印を削除';
-                        delBtn.addEventListener('mousedown', (de) => {
+                        delBtn.addEventListener('pointerdown', (de) => {
                             de.stopPropagation();
                             arrows.splice(idx, 1);
                             selectedObject = null;
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         handle.appendChild(delBtn);
                     }
                     
-                    handle.addEventListener('mousedown', (e) => {
+                    handle.addEventListener('pointerdown', (e) => {
                         e.stopPropagation();
                         let dragStartX = e.clientX, dragStartY = e.clientY;
                         let start_pctX = pctX, start_pctY = pctY;
@@ -449,14 +449,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
                         
                         const onUp = () => {
-                            window.removeEventListener('mousemove', onMove);
-                            window.removeEventListener('mouseup', onUp);
+                            window.removeEventListener('pointermove', onMove);
+                            window.removeEventListener('pointerup', onUp);
                             saveData();
                             renderArrows();
                         };
                         
-                        window.addEventListener('mousemove', onMove);
-                        window.addEventListener('mouseup', onUp);
+                        window.addEventListener('pointermove', onMove);
+                        window.addEventListener('pointerup', onUp);
                     });
                     mapContainer.appendChild(handle);
                 };
@@ -550,27 +550,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Input Handling ---
-    let isDragging = false;
+    const activePointers = new Map();
     let dragMode = null; 
-    let startX, startY;
-    let startStateX, startStateY, startStateRotZ, startStateRotX;
+    let startStateX, startStateY, startStateRotZ, startStateRotX, startStateZ;
+    let initialPinchDist = null;
+    let initialPinchAngle = null;
+    let initialPanX = null, initialPanY = null;
 
     scene.addEventListener('contextmenu', e => e.preventDefault());
 
-    scene.addEventListener('mousedown', (e) => {
+    scene.addEventListener('pointerdown', (e) => {
         if (currentTool !== 'move') return;
 
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-        if (e.button === 0 || e.button === 1) dragMode = 'pan';
-        else if (e.button === 2) dragMode = 'rotate';
+        if (activePointers.size === 1) {
+            // 単一タップ（パン操作、または右クリック回転）
+            if (e.pointerType === 'mouse' && e.button === 2) {
+                dragMode = 'rotate';
+            } else {
+                dragMode = 'pan';
+            }
+            initialPanX = e.clientX;
+            initialPanY = e.clientY;
+            
+            startStateX = state.x;
+            startStateY = state.y;
+            startStateRotZ = state.rotateZ;
+            startStateRotX = state.rotateX;
+            
+        } else if (activePointers.size === 2) {
+            // 2本指タップ（ピンチズーム・回転・パン）
+            dragMode = 'pinch';
+            const pts = Array.from(activePointers.values());
+            const dx = pts[1].x - pts[0].x;
+            const dy = pts[1].y - pts[0].y;
+            initialPinchDist = Math.sqrt(dx*dx + dy*dy);
+            initialPinchAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            initialPanX = (pts[0].x + pts[1].x) / 2;
+            initialPanY = (pts[0].y + pts[1].y) / 2;
 
-        startStateX = state.x;
-        startStateY = state.y;
-        startStateRotZ = state.rotateZ;
-        startStateRotX = state.rotateX;
+            startStateX = state.x;
+            startStateY = state.y;
+            startStateZ = state.z;
+            startStateRotZ = state.rotateZ;
+        }
+
         camera.classList.remove('animating');
         
         // Deselect object if dragging map
@@ -581,44 +607,94 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
+    window.addEventListener('pointermove', (e) => {
+        if (!activePointers.has(e.pointerId)) return;
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-        if (dragMode === 'pan') {
+        if (activePointers.size === 1 && (dragMode === 'pan' || dragMode === 'rotate')) {
+            const deltaX = e.clientX - initialPanX;
+            const deltaY = e.clientY - initialPanY;
+
+            if (dragMode === 'pan') {
+                const rad = state.rotateZ * Math.PI / 180;
+                const apparentScale = 1200 / Math.max(100, (1200 - state.z));
+                const panSpeed = 1.0 / apparentScale;
+                const moveX = (deltaX * Math.cos(-rad) - deltaY * Math.sin(-rad)) * panSpeed;
+                const moveY = (deltaX * Math.sin(-rad) + deltaY * Math.cos(-rad)) * panSpeed;
+                const tiltCorrection = Math.max(1, Math.cos(state.rotateX * Math.PI / 180));
+
+                state.x = startStateX + moveX;
+                state.y = startStateY + (moveY / tiltCorrection);
+                allModeBtns.forEach(b => b.classList.remove('active'));
+            } else if (dragMode === 'rotate') {
+                const rotSpeed = 0.5;
+                state.rotateZ = startStateRotZ + (deltaX * rotSpeed);
+                let newRotX = startStateRotX - (deltaY * rotSpeed);
+                newRotX = Math.max(0, Math.min(85, newRotX));
+                state.rotateX = newRotX;
+                allModeBtns.forEach(b => b.classList.remove('active'));
+            }
+            applyState();
+            
+        } else if (activePointers.size === 2 && dragMode === 'pinch') {
+            const pts = Array.from(activePointers.values());
+            const dx = pts[1].x - pts[0].x;
+            const dy = pts[1].y - pts[0].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // ピンチズーム
+            if (initialPinchDist > 0) {
+                const scaleDiff = dist / initialPinchDist;
+                let newZ = 1200 - (1200 - startStateZ) / scaleDiff;
+                newZ = Math.max(-4000, Math.min(1000, newZ));
+                state.z = newZ;
+            }
+
+            // 回転
+            let angleDiff = angle - initialPinchAngle;
+            if (angleDiff > 180) angleDiff -= 360;
+            if (angleDiff < -180) angleDiff += 360;
+            state.rotateZ = startStateRotZ + angleDiff;
+
+            // パン処理（2本指の中心の移動量）
+            const currentPanX = (pts[0].x + pts[1].x) / 2;
+            const currentPanY = (pts[0].y + pts[1].y) / 2;
+            const deltaX = currentPanX - initialPanX;
+            const deltaY = currentPanY - initialPanY;
+            
             const rad = state.rotateZ * Math.PI / 180;
             const apparentScale = 1200 / Math.max(100, (1200 - state.z));
-            // マウス移動量とマップ移動量を1:1に近づけるため1.0に変更
             const panSpeed = 1.0 / apparentScale;
-
             const moveX = (deltaX * Math.cos(-rad) - deltaY * Math.sin(-rad)) * panSpeed;
             const moveY = (deltaX * Math.sin(-rad) + deltaY * Math.cos(-rad)) * panSpeed;
             const tiltCorrection = Math.max(1, Math.cos(state.rotateX * Math.PI / 180));
 
             state.x = startStateX + moveX;
             state.y = startStateY + (moveY / tiltCorrection);
+
             allModeBtns.forEach(b => b.classList.remove('active'));
-        } else if (dragMode === 'rotate') {
-            const rotSpeed = 0.5;
-            state.rotateZ = startStateRotZ + (deltaX * rotSpeed);
-            let newRotX = startStateRotX - (deltaY * rotSpeed);
-            newRotX = Math.max(0, Math.min(85, newRotX));
-            state.rotateX = newRotX;
-            allModeBtns.forEach(b => b.classList.remove('active'));
+            applyState();
         }
-        applyState();
     });
 
-    window.addEventListener('mouseup', () => {
-        isDragging = false;
-        dragMode = null;
-    });
+    const pointerEnd = (e) => {
+        activePointers.delete(e.pointerId);
+        if (activePointers.size === 0) {
+            dragMode = null;
+        } else if (activePointers.size === 1) {
+            const pts = Array.from(activePointers.values());
+            initialPanX = pts[0].x;
+            initialPanY = pts[0].y;
+            startStateX = state.x;
+            startStateY = state.y;
+            dragMode = 'pan';
+        }
+    };
 
-    window.addEventListener('mouseleave', () => {
-        isDragging = false;
-        dragMode = null;
-    });
+    window.addEventListener('pointerup', pointerEnd);
+    window.addEventListener('pointercancel', pointerEnd);
+    window.addEventListener('pointerleave', pointerEnd);
 
     scene.addEventListener('wheel', (e) => {
         e.preventDefault();
@@ -632,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     // Map Click Handling for Tools
-    mapImage.addEventListener('mousedown', (e) => {
+    mapImage.addEventListener('pointerdown', (e) => {
         // Deselect object
         if (selectedObject !== null) {
             selectedObject = null;
@@ -656,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mapContainer.appendChild(tempPinCircle);
                 applyState();
                 
-                tempPinCircle.addEventListener('mousedown', (ce) => {
+                tempPinCircle.addEventListener('pointerdown', (ce) => {
                     ce.stopPropagation();
                     openPinModal(null, px, py);
                 });
@@ -667,7 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (currentTool === 'arrow') {
             const makePreviewDraggable = (circleElem, isStartPoint) => {
-                circleElem.addEventListener('mousedown', (e) => {
+                circleElem.addEventListener('pointerdown', (e) => {
                     e.stopPropagation();
                     let dragStartX = e.clientX, dragStartY = e.clientY;
                     let startPx = isStartPoint ? arrowStartPoint.x : arrowEndPoint.x;
@@ -714,11 +790,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     };
                     const onUp = () => {
-                        window.removeEventListener('mousemove', onMove);
-                        window.removeEventListener('mouseup', onUp);
+                        window.removeEventListener('pointermove', onMove);
+                        window.removeEventListener('pointerup', onUp);
                     };
-                    window.addEventListener('mousemove', onMove);
-                    window.addEventListener('mouseup', onUp);
+                    window.addEventListener('pointermove', onMove);
+                    window.addEventListener('pointerup', onUp);
                 });
             };
 
@@ -738,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.className = 'pin-action-btn delete';
                 delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                 delBtn.title = '始点をキャンセル';
-                delBtn.addEventListener('mousedown', (de) => {
+                delBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
                     if (tempArrowCircle) { tempArrowCircle.remove(); tempArrowCircle = null; }
                     arrowStartPoint = null;
@@ -769,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 okBtn.className = 'pin-action-btn success';
                 okBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                 okBtn.title = '確定';
-                okBtn.addEventListener('mousedown', (de) => {
+                okBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
                     const dx = arrowEndPoint.x - arrowStartPoint.x;
                     const dy = arrowEndPoint.y - arrowStartPoint.y;
@@ -796,7 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.className = 'pin-action-btn delete';
                 delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                 delBtn.title = '終点をキャンセル';
-                delBtn.addEventListener('mousedown', (de) => {
+                delBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
                     if (tempArrowEndCircle) { tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
                     if (tempArrowPreview) { tempArrowPreview.remove(); tempArrowPreview = null; }
