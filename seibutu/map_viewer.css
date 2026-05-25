@@ -153,58 +153,88 @@ body {
     cursor: grab;
 }
 .custom-marker.selected {
-    border-color: #ffb703;
-    box-shadow: 0 0 0 4px #ffb703, 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4);
+    border-color: #ffb703 !important;
+    box-shadow: 0 0 0 4px #ffb703, 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4) !important;
     z-index: 101; /* 選択時は手前に */
 }
 .custom-marker:active {
     cursor: grabbing;
 }
 .custom-marker:hover:not(.selected) {
-    border-color: #ffb703;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4);
+    border-color: #ffb703 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4) !important;
     z-index: 100;
 }
 
-/* ピン選択時のアクションボタン群 */
-.pin-actions {
+/* 共通フローティングツールバー (ピン・矢印の選択時メニュー) */
+.floating-toolbar {
     position: absolute;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: rgba(20, 20, 20, 0.9);
+    padding: 6px 10px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+    pointer-events: auto;
+    z-index: 110;
+}
+.floating-toolbar.pin {
     top: -65px;
     left: 50%;
     transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    background: rgba(20, 20, 20, 0.9);
-    padding: 6px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.2);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-    pointer-events: auto;
 }
-.pin-action-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
+.floating-toolbar.arrow {
+    top: -55px;
+    left: 15px;
+}
+.toolbar-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: white;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.1s;
 }
-.pin-action-btn:hover {
-    background: rgba(255,255,255,0.2);
+.toolbar-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
 }
-.pin-action-btn.delete:hover {
+.toolbar-action-btn.delete:hover {
     background: #ff4646;
 }
-.pin-action-btn.success {
+.toolbar-action-btn.success {
     color: #28a745;
 }
-.pin-action-btn.success:hover {
+.toolbar-action-btn.success:hover {
     background: #28a745;
     color: white;
+}
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 4px;
+}
+.toolbar-color-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.toolbar-color-btn:hover {
+    transform: scale(1.15);
+}
+.toolbar-color-btn.active {
+    border-color: white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
 }
 
 /* ツール切り替えバー */
@@ -292,7 +322,6 @@ body {
 
 .arrow-path {
     fill: none;
-    stroke: rgba(0, 210, 255, 0.8);
     stroke-width: 6;
     stroke-linecap: round;
     pointer-events: none; /* 当たり判定はヒットエリアに任せる */
@@ -336,26 +365,7 @@ body {
 .arrow-anchor:active {
     cursor: grabbing;
 }
-.arrow-delete-btn {
-    position: absolute;
-    top: -35px;
-    left: 15px;
-    width: 32px;
-    height: 32px;
-    background: #ff4646;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    pointer-events: auto;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
-    transition: background 0.2s;
-}
-.arrow-delete-btn:hover {
-    background: #ff6b6b;
-}
+
 
 /* モーダル */
 .modal {

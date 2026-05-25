@@ -57,6 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let arrowEndPoint = null; // {x, y}
     let tempArrowPreview = null;
 
+    const ARROW_COLORS = [
+        'rgba(0, 210, 255, 0.9)', // 0: Default (Cyan)
+        'rgba(255, 50, 50, 0.9)', // 1: Red
+        'rgba(50, 255, 50, 0.9)', // 2: Green
+        'rgba(255, 230, 0, 0.9)', // 3: Yellow
+        'rgba(255, 255, 255, 0.9)' // 4: White
+    ];
+
     const PRESETS = {
         topdown: { rotateX: 0, rotateZ: 0, scale: 1.0, x: 0, y: 0, z: -2500 },
         birdseye: { rotateX: 45, rotateZ: 45, scale: 1.0, x: 0, y: 0, z: -1800 },
@@ -98,12 +106,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.pins) customPins = data.pins;
                 else if (data.p) {
-                    customPins = data.p.map(p => ({ id: p[0], text: p[1], x: p[2], y: p[3], isFlat: !!p[4] }));
+                    customPins = data.p.map(p => ({ id: p[0], text: p[1], x: p[2], y: p[3], isFlat: !!p[4], color: p[5] || 0 }));
                 }
 
                 if (data.arrows) arrows = data.arrows;
                 else if (data.a) {
-                    arrows = data.a.map(a => ({ sx: a[0], sy: a[1], ex: a[2], ey: a[3], cx: a[4], cy: a[5] }));
+                    arrows = data.a.map(a => ({ sx: a[0], sy: a[1], ex: a[2], ey: a[3], cx: a[4], cy: a[5], color: a[6] || 0 }));
                 }
 
                 loaded = true;
@@ -239,14 +247,22 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.top = `${p.y}%`;
             el.style.left = `${p.x}%`;
             
+            const colorIndex = p.color || 0;
+            if (colorIndex > 0) {
+                const c = ARROW_COLORS[colorIndex];
+                el.style.borderColor = c;
+                const shadowColor = c.replace('0.9', '0.2');
+                el.style.boxShadow = `0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px ${shadowColor}`;
+            }
+
             const isSelected = (selectedObject && selectedObject.type === 'pin' && selectedObject.id === p.id);
             if (isSelected) {
                 el.classList.add('selected');
                 const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'pin-actions';
+                actionsDiv.className = 'floating-toolbar pin';
                 
                 const editBtn = document.createElement('div');
-                editBtn.className = 'pin-action-btn';
+                editBtn.className = 'toolbar-action-btn';
                 editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
                 editBtn.title = '編集';
                 editBtn.addEventListener('pointerdown', (de) => {
@@ -255,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const delBtn = document.createElement('div');
-                delBtn.className = 'pin-action-btn delete';
+                delBtn.className = 'toolbar-action-btn delete';
                 delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                 delBtn.title = '削除';
                 delBtn.addEventListener('pointerdown', (de) => {
@@ -269,6 +285,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 actionsDiv.appendChild(editBtn);
                 actionsDiv.appendChild(delBtn);
+
+                const divider = document.createElement('div');
+                divider.className = 'toolbar-divider';
+                actionsDiv.appendChild(divider);
+
+                ARROW_COLORS.forEach((color, cIdx) => {
+                    const cBtn = document.createElement('div');
+                    cBtn.className = 'toolbar-color-btn' + (colorIndex === cIdx ? ' active' : '');
+                    cBtn.style.backgroundColor = color;
+                    cBtn.addEventListener('pointerdown', (ce) => {
+                        ce.stopPropagation();
+                        p.color = cIdx;
+                        saveData();
+                        renderCustomPins();
+                    });
+                    actionsDiv.appendChild(cBtn);
+                });
+
                 el.appendChild(actionsDiv);
             }
 
@@ -338,9 +372,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderArrows() {
         arrowLayer.innerHTML = `
             <defs>
-                <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
-                    <polygon points="0 0, 12 4, 0 8" fill="rgba(0, 210, 255, 0.9)" />
-                </marker>
+                <marker id="arrowhead_0" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto"><polygon points="0 0, 12 4, 0 8" fill="${ARROW_COLORS[0]}" /></marker>
+                <marker id="arrowhead_1" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto"><polygon points="0 0, 12 4, 0 8" fill="${ARROW_COLORS[1]}" /></marker>
+                <marker id="arrowhead_2" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto"><polygon points="0 0, 12 4, 0 8" fill="${ARROW_COLORS[2]}" /></marker>
+                <marker id="arrowhead_3" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto"><polygon points="0 0, 12 4, 0 8" fill="${ARROW_COLORS[3]}" /></marker>
+                <marker id="arrowhead_4" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto"><polygon points="0 0, 12 4, 0 8" fill="${ARROW_COLORS[4]}" /></marker>
                 <marker id="arrowhead-selected" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
                     <polygon points="0 0, 12 4, 0 8" fill="#ffb703" />
                 </marker>
@@ -394,10 +430,12 @@ document.addEventListener('DOMContentLoaded', () => {
             headHitCircle.style.cursor = 'grab';
             
             const isSelected = (selectedObject && selectedObject.type === 'arrow' && selectedObject.id === idx);
+            const colorIndex = arr.color || 0;
             const visualPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             visualPath.setAttribute('d', getPathD(arr));
             visualPath.setAttribute('class', `arrow-path ${isSelected ? 'selected' : ''}`);
-            visualPath.setAttribute('marker-end', isSelected ? 'url(#arrowhead-selected)' : 'url(#arrowhead)');
+            visualPath.setAttribute('stroke', ARROW_COLORS[colorIndex]);
+            visualPath.setAttribute('marker-end', isSelected ? 'url(#arrowhead-selected)' : `url(#arrowhead_${colorIndex})`);
             
             g.appendChild(hitPath);
             g.appendChild(headHitCircle);
@@ -511,8 +549,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     handle.style.top = `${pctY}%`;
                     
                     if (type === 'bezier') {
+                        const actionsContainer = document.createElement('div');
+                        actionsContainer.className = 'floating-toolbar arrow';
+                        
                         const delBtn = document.createElement('div');
-                        delBtn.className = 'arrow-delete-btn';
+                        delBtn.className = 'toolbar-action-btn delete';
                         delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                         delBtn.title = '矢印を削除';
                         delBtn.addEventListener('pointerdown', (de) => {
@@ -522,7 +563,26 @@ document.addEventListener('DOMContentLoaded', () => {
                             saveData();
                             renderArrows();
                         });
-                        handle.appendChild(delBtn);
+                        actionsContainer.appendChild(delBtn);
+
+                        const divider = document.createElement('div');
+                        divider.className = 'toolbar-divider';
+                        actionsContainer.appendChild(divider);
+
+                        ARROW_COLORS.forEach((color, cIdx) => {
+                            const cBtn = document.createElement('div');
+                            cBtn.className = 'toolbar-color-btn' + ((arr.color || 0) === cIdx ? ' active' : '');
+                            cBtn.style.backgroundColor = color;
+                            cBtn.addEventListener('pointerdown', (ce) => {
+                                ce.stopPropagation();
+                                arr.color = cIdx;
+                                saveData();
+                                renderArrows();
+                            });
+                            actionsContainer.appendChild(cBtn);
+                        });
+
+                        handle.appendChild(actionsContainer);
                     }
                     
                     handle.addEventListener('pointerdown', (e) => {
@@ -1218,8 +1278,16 @@ document.addEventListener('DOMContentLoaded', () => {
     btnShare.addEventListener('click', async () => {
         const shortData = {
             s: [Math.round(state.x), Math.round(state.y), Math.round(state.z), Math.round(state.rotateX), Math.round(state.rotateZ), state.scale],
-            p: customPins.map(p => [p.id, p.text, Math.round(p.x*10)/10, Math.round(p.y*10)/10, p.isFlat ? 1 : 0]),
-            a: arrows.map(a => [Math.round(a.sx*10)/10, Math.round(a.sy*10)/10, Math.round(a.ex*10)/10, Math.round(a.ey*10)/10, Math.round(a.cx*10)/10, Math.round(a.cy*10)/10])
+            p: customPins.map(p => {
+                const arr = [p.id, p.text, Math.round(p.x*10)/10, Math.round(p.y*10)/10, p.isFlat ? 1 : 0];
+                if (p.color) arr.push(p.color);
+                return arr;
+            }),
+            a: arrows.map(a => {
+                const arr = [Math.round(a.sx*10)/10, Math.round(a.sy*10)/10, Math.round(a.ex*10)/10, Math.round(a.ey*10)/10, Math.round(a.cx*10)/10, Math.round(a.cy*10)/10];
+                if (a.color) arr.push(a.color);
+                return arr;
+            })
         };
         const jsonStr = JSON.stringify(shortData);
         
