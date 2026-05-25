@@ -153,15 +153,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function cancelTempUI() {
         let canceled = false;
-        if (tempArrowCircle) { tempArrowCircle.remove(); tempArrowCircle = null; canceled = true; }
-        if (tempArrowEndCircle) { tempArrowEndCircle.remove(); tempArrowEndCircle = null; canceled = true; }
+        if (tempArrowCircle) { if (tempArrowCircle.toolbarRef) tempArrowCircle.toolbarRef.remove(); tempArrowCircle.remove(); tempArrowCircle = null; canceled = true; }
+        if (tempArrowEndCircle) { if (tempArrowEndCircle.toolbarRef) tempArrowEndCircle.toolbarRef.remove(); tempArrowEndCircle.remove(); tempArrowEndCircle = null; canceled = true; }
         if (tempArrowPreview) { tempArrowPreview.remove(); tempArrowPreview = null; canceled = true; }
         if (arrowStartPoint || arrowEndPoint) {
             arrowStartPoint = null;
             arrowEndPoint = null;
             canceled = true;
         }
-        if (tempPinCircle) { tempPinCircle.remove(); tempPinCircle = null; canceled = true; }
+        if (tempPinCircle) { if (tempPinCircle.toolbarRef) tempPinCircle.toolbarRef.remove(); tempPinCircle.remove(); tempPinCircle = null; canceled = true; }
         return canceled;
     }
 
@@ -239,7 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCustomPins() {
         document.querySelectorAll('.custom-marker').forEach(m => m.remove());
-        customPins.forEach(p => {
+        document.querySelectorAll('.floating-toolbar.pin').forEach(el => el.remove());
+        customPins.forEach((p, index) => {
             const el = document.createElement('div');
             el.className = 'marker custom-marker';
             if (p.isFlat) el.classList.add('is-flat');
@@ -248,11 +249,14 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.left = `${p.x}%`;
             
             const colorIndex = p.color || 0;
-            if (colorIndex > 0) {
-                const c = ARROW_COLORS[colorIndex];
-                el.style.borderColor = c;
-                const shadowColor = c.replace('0.9', '0.2');
-                el.style.boxShadow = `0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px ${shadowColor}`;
+            const c = ARROW_COLORS[colorIndex];
+            el.style.borderColor = c;
+            const shadowColor = c.replace('0.9', '0.2');
+            el.style.boxShadow = `0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px ${shadowColor}`;
+            
+            const rgbMatch = c.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbMatch) {
+                el.style.setProperty('--pin-rgb', `${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}`);
             }
 
             const isSelected = (selectedObject && selectedObject.type === 'pin' && selectedObject.id === p.id);
@@ -303,7 +307,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     actionsDiv.appendChild(cBtn);
                 });
 
-                el.appendChild(actionsDiv);
+                el.toolbarRef = actionsDiv;
+                actionsDiv.style.left = `${p.x}%`;
+                actionsDiv.style.top = `${p.y}%`;
+                mapContainer.appendChild(actionsDiv);
             }
 
             el.addEventListener('pointerdown', (e) => {
@@ -386,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </defs>
         `;
         document.querySelectorAll('.arrow-anchor').forEach(el => el.remove());
+        document.querySelectorAll('.floating-toolbar.arrow').forEach(el => el.remove());
 
         const w = mapContainer.offsetWidth;
         const h = mapContainer.offsetHeight;
@@ -470,6 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let wasSelected = isSelected && !toolChanged;
                 if (!wasSelected) {
                     selectedObject = { type: 'arrow', id: idx };
+                    saveData();
                     renderCustomPins();
                     renderArrows();
                     return; // 初回クリック時は選択のみ行う
@@ -582,7 +591,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             actionsContainer.appendChild(cBtn);
                         });
 
-                        handle.appendChild(actionsContainer);
+                        handle.toolbarRef = actionsContainer;
+                        actionsContainer.style.left = `${pctX}%`;
+                        actionsContainer.style.top = `${pctY}%`;
+                        mapContainer.appendChild(actionsContainer);
                     }
                     
                     handle.addEventListener('pointerdown', (e) => {
@@ -698,6 +710,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const inverseScale = 1 / apparentScale;
         const radZ = state.rotateZ;
         const radX = state.rotateX;
+
+        const toolbars = document.querySelectorAll('#map-container > .floating-toolbar');
+        toolbars.forEach(tb => {
+            const isPin = tb.classList.contains('pin');
+            const offsetTransform = isPin ? 'translateY(-65px)' : 'translate(15px, -55px)';
+            tb.style.transform = `translate(-50%, -50%) translateZ(50px) rotateZ(${-radZ}deg) rotateX(${-radX}deg) scale(${inverseScale}) ${offsetTransform}`;
+        });
 
         const markers = document.querySelectorAll('.marker, .temp-circle, .arrow-anchor');
         markers.forEach(el => {
@@ -969,6 +988,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         circleElem.style.left = `${newX}%`;
                         circleElem.style.top = `${newY}%`;
+                        if (circleElem.toolbarRef) {
+                            circleElem.toolbarRef.style.left = `${newX}%`;
+                            circleElem.toolbarRef.style.top = `${newY}%`;
+                        }
                         
                         if (arrowStartPoint && arrowEndPoint && tempArrowPreview) {
                             const w = mapContainer.offsetWidth;
@@ -1014,11 +1037,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.title = '始点をキャンセル';
                 delBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
-                    if (tempArrowCircle) { tempArrowCircle.remove(); tempArrowCircle = null; }
+                    if (tempArrowCircle) { if (tempArrowCircle.toolbarRef) tempArrowCircle.toolbarRef.remove(); tempArrowCircle.remove(); tempArrowCircle = null; }
                     arrowStartPoint = null;
                 });
                 actionsDiv.appendChild(delBtn);
-                tempArrowCircle.appendChild(actionsDiv);
+                tempArrowCircle.toolbarRef = actionsDiv;
+                actionsDiv.style.left = `${px}%`;
+                actionsDiv.style.top = `${py}%`;
+                mapContainer.appendChild(actionsDiv);
                 makePreviewDraggable(tempArrowCircle, true);
                 
                 mapContainer.appendChild(tempArrowCircle);
@@ -1055,14 +1081,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     arrows.push({ sx: arrowStartPoint.x, sy: arrowStartPoint.y, ex: arrowEndPoint.x, ey: arrowEndPoint.y, cx, cy });
                     
-                    if (tempArrowCircle) { tempArrowCircle.remove(); tempArrowCircle = null; }
-                    if (tempArrowEndCircle) { tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
+                    if (tempArrowCircle) { if (tempArrowCircle.toolbarRef) tempArrowCircle.toolbarRef.remove(); tempArrowCircle.remove(); tempArrowCircle = null; }
+                    if (tempArrowEndCircle) { if (tempArrowEndCircle.toolbarRef) tempArrowEndCircle.toolbarRef.remove(); tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
                     if (tempArrowPreview) { tempArrowPreview.remove(); tempArrowPreview = null; }
                     arrowStartPoint = null;
                     arrowEndPoint = null;
                     
                     selectedObject = { type: 'arrow', id: arrows.length - 1 };
                     saveData();
+                    renderCustomPins();
                     renderArrows();
                 });
                 
@@ -1072,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.title = '終点をキャンセル';
                 delBtn.addEventListener('pointerdown', (de) => {
                     de.stopPropagation();
-                    if (tempArrowEndCircle) { tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
+                    if (tempArrowEndCircle) { if (tempArrowEndCircle.toolbarRef) tempArrowEndCircle.toolbarRef.remove(); tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
                     if (tempArrowPreview) { tempArrowPreview.remove(); tempArrowPreview = null; }
                     arrowEndPoint = null;
                     
@@ -1084,7 +1111,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 actionsDiv.appendChild(okBtn);
                 actionsDiv.appendChild(delBtn);
-                tempArrowEndCircle.appendChild(actionsDiv);
+                tempArrowEndCircle.toolbarRef = actionsDiv;
+                actionsDiv.style.left = `${px}%`;
+                actionsDiv.style.top = `${py}%`;
+                mapContainer.appendChild(actionsDiv);
                 makePreviewDraggable(tempArrowEndCircle, false);
                 
                 mapContainer.appendChild(tempArrowEndCircle);
@@ -1163,6 +1193,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function closePinModal() {
         pinModal.classList.add('hidden');
         if (tempPinCircle) {
+            if (tempPinCircle.toolbarRef) tempPinCircle.toolbarRef.remove();
+            if (tempPinCircle.toolbarRef) tempPinCircle.toolbarRef.remove();
             tempPinCircle.remove();
             tempPinCircle = null;
         }
@@ -1218,7 +1250,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentTool === 'arrow') {
                 if (arrowEndPoint) {
                     // 終点をキャンセル
-                    if (tempArrowEndCircle) { tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
+                    if (tempArrowEndCircle) { if (tempArrowEndCircle.toolbarRef) tempArrowEndCircle.toolbarRef.remove(); tempArrowEndCircle.remove(); tempArrowEndCircle = null; }
                     if (tempArrowPreview) { tempArrowPreview.remove(); tempArrowPreview = null; }
                     arrowEndPoint = null;
                     
@@ -1228,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else if (arrowStartPoint) {
                     // 始点をキャンセル
-                    if (tempArrowCircle) { tempArrowCircle.remove(); tempArrowCircle = null; }
+                    if (tempArrowCircle) { if (tempArrowCircle.toolbarRef) tempArrowCircle.toolbarRef.remove(); tempArrowCircle.remove(); tempArrowCircle = null; }
                     arrowStartPoint = null;
                 }
             }
@@ -1248,14 +1280,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tool === 'arrow') btnToolArrow.classList.add('active');
 
         if (tempPinCircle) {
+            if (tempPinCircle.toolbarRef) tempPinCircle.toolbarRef.remove();
+            if (tempPinCircle.toolbarRef) tempPinCircle.toolbarRef.remove();
             tempPinCircle.remove();
             tempPinCircle = null;
         }
         if (tempArrowCircle) {
+            if (tempArrowCircle.toolbarRef) tempArrowCircle.toolbarRef.remove();
+            if (tempArrowCircle.toolbarRef) tempArrowCircle.toolbarRef.remove();
             tempArrowCircle.remove();
             tempArrowCircle = null;
         }
         if (tempArrowEndCircle) {
+            if (tempArrowEndCircle.toolbarRef) tempArrowEndCircle.toolbarRef.remove();
+            if (tempArrowEndCircle.toolbarRef) tempArrowEndCircle.toolbarRef.remove();
             tempArrowEndCircle.remove();
             tempArrowEndCircle = null;
         }

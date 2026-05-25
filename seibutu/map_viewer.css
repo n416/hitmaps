@@ -180,14 +180,9 @@ body {
     pointer-events: auto;
     z-index: 110;
 }
-.floating-toolbar.pin {
-    top: -65px;
+.floating-toolbar.pin, .floating-toolbar.arrow {
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-}
-.floating-toolbar.arrow {
-    top: -55px;
-    left: 15px;
 }
 .toolbar-action-btn {
     width: 36px;
@@ -283,9 +278,9 @@ body {
 }
 
 @keyframes pulse {
-    0% { transform: translate(-50%, -50%) translateZ(10px) scale(0.9); opacity: 0.8; }
-    50% { transform: translate(-50%, -50%) translateZ(10px) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -50%) translateZ(10px) scale(0.9); opacity: 0.8; }
+    0% { background-color: rgba(var(--pin-rgb, 0, 210, 255), 0.1); border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 0 rgba(var(--pin-rgb, 0, 210, 255), 0.4); }
+    50% { background-color: rgba(var(--pin-rgb, 0, 210, 255), 0.4); border-color: rgba(255, 255, 255, 1); box-shadow: 0 0 0 15px rgba(var(--pin-rgb, 0, 210, 255), 0); }
+    100% { background-color: rgba(var(--pin-rgb, 0, 210, 255), 0.1); border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 0 rgba(var(--pin-rgb, 0, 210, 255), 0); }
 }
 
 /* SVG 矢印レイヤー */
