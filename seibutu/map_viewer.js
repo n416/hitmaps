@@ -64,13 +64,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Data Management ---
-    function loadData() {
+    async function loadData() {
         let loaded = false;
         if (window.location.hash) {
             try {
                 let encoded = window.location.hash.substring(1);
                 let data;
-                if (encoded.startsWith('v2_')) {
+                if (encoded.startsWith('v3_')) {
+                    encoded = encoded.substring(3);
+                    const binary = atob(encoded);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    const stream = new Blob([bytes]).stream();
+                    const decompressedStream = stream.pipeThrough(new DecompressionStream('deflate-raw'));
+                    const decompressedBytes = await new Response(decompressedStream).arrayBuffer();
+                    data = JSON.parse(new TextDecoder().decode(decompressedBytes));
+                } else if (encoded.startsWith('v2_')) {
                     encoded = encoded.substring(3);
                     const binary = atob(encoded);
                     const bytes = new Uint8Array(binary.length);
@@ -1206,17 +1215,21 @@ document.addEventListener('DOMContentLoaded', () => {
         else loadPreset('human', btnHuman);
     });
 
-    btnShare.addEventListener('click', () => {
+    btnShare.addEventListener('click', async () => {
         const shortData = {
             s: [Math.round(state.x), Math.round(state.y), Math.round(state.z), Math.round(state.rotateX), Math.round(state.rotateZ), state.scale],
             p: customPins.map(p => [p.id, p.text, Math.round(p.x*10)/10, Math.round(p.y*10)/10, p.isFlat ? 1 : 0]),
             a: arrows.map(a => [Math.round(a.sx*10)/10, Math.round(a.sy*10)/10, Math.round(a.ex*10)/10, Math.round(a.ey*10)/10, Math.round(a.cx*10)/10, Math.round(a.cy*10)/10])
         };
         const jsonStr = JSON.stringify(shortData);
-        const bytes = new TextEncoder().encode(jsonStr);
+        
+        const stream = new Blob([jsonStr]).stream();
+        const compressedStream = stream.pipeThrough(new CompressionStream('deflate-raw'));
+        const compressedBytes = new Uint8Array(await new Response(compressedStream).arrayBuffer());
+        
         let binary = '';
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        const encoded = 'v2_' + btoa(binary);
+        for (let i = 0; i < compressedBytes.length; i++) binary += String.fromCharCode(compressedBytes[i]);
+        const encoded = 'v3_' + btoa(binary);
 
         const url = new URL(window.location.href);
         url.hash = encoded;
@@ -1256,15 +1269,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize
-    loadData();
-    if (!window.location.hash) {
-        loadPreset('human', btnHuman);
-    }
+    async function init() {
+        await loadData();
+        if (!window.location.hash) {
+            loadPreset('human', btnHuman);
+        }
 
-    // データロード後にマップの初期化とレンダリングを行う
-    if (mapImage.complete) {
-        initMap();
-    } else {
-        mapImage.addEventListener('load', initMap);
+        // データロード後にマップの初期化とレンダリングを行う
+        if (mapImage.complete) {
+            initMap();
+        } else {
+            mapImage.addEventListener('load', initMap);
+        }
     }
+    
+    init();
 });
