@@ -88,12 +88,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch(e) {}
         }
+        pushHistory();
+    }
+
+    let historyStack = [];
+    let historyIndex = -1;
+    let isRestoringHistory = false;
+
+    function pushHistory() {
+        if (isRestoringHistory) return;
+        historyStack.length = historyIndex + 1;
+        historyStack.push({
+            pins: JSON.stringify(customPins),
+            arrows: JSON.stringify(arrows),
+            selectedObject: JSON.stringify(selectedObject)
+        });
+        if (historyStack.length > 50) {
+            historyStack.shift();
+        } else {
+            historyIndex++;
+        }
+    }
+
+    function cancelTempUI() {
+        let canceled = false;
+        if (tempArrowCircle) { tempArrowCircle.remove(); tempArrowCircle = null; canceled = true; }
+        if (tempArrowEndCircle) { tempArrowEndCircle.remove(); tempArrowEndCircle = null; canceled = true; }
+        if (tempArrowPreview) { tempArrowPreview.remove(); tempArrowPreview = null; canceled = true; }
+        if (arrowStartPoint || arrowEndPoint) {
+            arrowStartPoint = null;
+            arrowEndPoint = null;
+            canceled = true;
+        }
+        if (tempPinCircle) { tempPinCircle.remove(); tempPinCircle = null; canceled = true; }
+        return canceled;
+    }
+
+    function undo() {
+        if (cancelTempUI()) return; // 作成中ならキャンセルのみ行う
+
+        if (historyIndex > 0) {
+            historyIndex--;
+            restoreHistory();
+        }
+    }
+
+    function redo() {
+        if (cancelTempUI()) return; // 作成中ならキャンセルのみ行う
+
+        if (historyIndex < historyStack.length - 1) {
+            historyIndex++;
+            restoreHistory();
+        }
+    }
+
+    function restoreHistory() {
+        isRestoringHistory = true;
+
+        cancelTempUI(); // 安全のためのクリア
+
+        const state = historyStack[historyIndex];
+        customPins = JSON.parse(state.pins);
+        arrows = JSON.parse(state.arrows);
+        selectedObject = JSON.parse(state.selectedObject);
+        saveData();
+        renderCustomPins();
+        renderArrows();
+        isRestoringHistory = false;
     }
 
     function saveData() {
         const data = { pins: customPins, arrows };
         localStorage.setItem('hit2_map_data', JSON.stringify(data));
+        pushHistory();
     }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            if (selectedObject) {
+                if (selectedObject.type === 'pin') {
+                    customPins = customPins.filter(p => p.id !== selectedObject.id);
+                } else if (selectedObject.type === 'arrow') {
+                    arrows.splice(selectedObject.id, 1);
+                }
+                selectedObject = null;
+                saveData();
+                renderCustomPins();
+                renderArrows();
+            }
+        } else if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            undo();
+        } else if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+            e.preventDefault();
+            redo();
+        }
+    });
 
     // --- Toast ---
     let toastTimer;
