@@ -153,16 +153,16 @@ body {
     cursor: grab;
 }
 .custom-marker.selected {
-    border-color: #ffb703 !important;
-    box-shadow: 0 0 0 4px #ffb703, 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4) !important;
+    border-color: rgb(var(--pin-rgb, 255, 183, 3)) !important;
+    box-shadow: 0 0 0 4px rgb(var(--pin-rgb, 255, 183, 3)), 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(var(--pin-rgb, 255, 183, 3), 0.4) !important;
     z-index: 101; /* 選択時は手前に */
 }
 .custom-marker:active {
     cursor: grabbing;
 }
 .custom-marker:hover:not(.selected) {
-    border-color: #ffb703 !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4) !important;
+    border-color: rgb(var(--pin-rgb, 255, 183, 3)) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(var(--pin-rgb, 255, 183, 3), 0.4) !important;
     z-index: 100;
 }
 
