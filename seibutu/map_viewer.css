@@ -34,7 +34,7 @@ body {
     top: 50%;
     left: 50%;
     transform-style: preserve-3d;
-    transition: transform 0.1s ease-out; /* スムーズな操作感のため少しtransitionを入れる */
+    transition: none; /* ドラッグ操作が遅延して重く感じる原因になるため削除 */
 }
 
 /* カメラアニメーション時（ボタン押下時）は長めのtransitionを付与するクラス */
@@ -143,4 +143,331 @@ body {
     user-select: none;
     /* 地面に張り付いているような立体感を強調 */
     transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* カスタムピンの追加スタイル（ドラッグ可能・ホバーエフェクト） */
+.custom-marker {
+    pointer-events: auto;
+    cursor: grab;
+}
+.custom-marker.selected {
+    border-color: #ffb703;
+    box-shadow: 0 0 0 4px #ffb703, 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4);
+    z-index: 101; /* 選択時は手前に */
+}
+.custom-marker:active {
+    cursor: grabbing;
+}
+.custom-marker:hover:not(.selected) {
+    border-color: #ffb703;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 183, 3, 0.4);
+    z-index: 100;
+}
+
+/* ピン選択時のアクションボタン群 */
+.pin-actions {
+    position: absolute;
+    top: -65px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(20, 20, 20, 0.9);
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    pointer-events: auto;
+}
+.pin-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.pin-action-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+.pin-action-btn.delete:hover {
+    background: #ff4646;
+}
+.pin-action-btn.success {
+    color: #28a745;
+}
+.pin-action-btn.success:hover {
+    background: #28a745;
+    color: white;
+}
+
+/* ツール切り替えバー */
+#tool-bar {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    background: rgba(20, 20, 20, 0.85);
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.tool-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    font-size: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* 仮配置サークル */
+.temp-circle {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 2px dashed rgba(255, 255, 255, 0.8);
+    background: rgba(0, 210, 255, 0.2);
+    border-radius: 50%;
+    transform-origin: 50% 50%;
+    transform: translate(-50%, -50%) translateZ(10px);
+    pointer-events: auto;
+    cursor: pointer;
+    animation: pulse 1.5s infinite;
+}
+.temp-circle:hover {
+    background: rgba(0, 210, 255, 0.4);
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) translateZ(10px) scale(0.9); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) translateZ(10px) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) translateZ(10px) scale(0.9); opacity: 0.8; }
+}
+
+/* SVG 矢印レイヤー */
+#arrow-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* 線を引く時以外はイベント無視 */
+    z-index: 1; /* マーカーより下、マップ画像より上 */
+}
+
+/* 矢印の当たり判定（見えない極太の線） */
+.arrow-hit-area {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 30;
+    pointer-events: stroke;
+    cursor: grab;
+}
+.arrow-hit-area:active {
+    cursor: grabbing;
+}
+
+/* 矢印のバウンディングボックス（囲み枠） */
+.arrow-bounding-box {
+    fill: rgba(255, 183, 3, 0.05);
+    stroke: rgba(255, 183, 3, 0.8);
+    stroke-width: 2;
+    stroke-dasharray: 8, 8;
+    pointer-events: none;
+}
+
+.arrow-path {
+    fill: none;
+    stroke: rgba(0, 210, 255, 0.8);
+    stroke-width: 6;
+    stroke-linecap: round;
+    pointer-events: none; /* 当たり判定はヒットエリアに任せる */
+    transition: stroke 0.2s;
+}
+.arrow-path.selected {
+    stroke: #ffb703;
+}
+.arrow-preview-path {
+    fill: none;
+    stroke: rgba(255, 183, 3, 0.6);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 10, 10;
+    pointer-events: none;
+    animation: dash-flow 1s linear infinite;
+}
+
+@keyframes dash-flow {
+    to { stroke-dashoffset: -20; }
+}
+
+/* 矢印のアンカーポイント */
+.arrow-anchor {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: #00d2ff;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    transform-origin: 50% 50%;
+    transform: translate(-50%, -50%) translateZ(25px);
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    z-index: 105;
+}
+.arrow-anchor.bezier {
+    background: #ffb703;
+}
+.arrow-anchor:active {
+    cursor: grabbing;
+}
+.arrow-delete-btn {
+    position: absolute;
+    top: -35px;
+    left: 15px;
+    width: 32px;
+    height: 32px;
+    background: #ff4646;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    transition: background 0.2s;
+}
+.arrow-delete-btn:hover {
+    background: #ff6b6b;
+}
+
+/* モーダル */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: rgba(25, 25, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    width: 320px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal.hidden .modal-content {
+    transform: translateY(20px);
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    text-align: center;
+    color: #fff;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.modal-content input:focus {
+    border-color: #00d2ff;
+}
+
+.modal-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.modal-btn.primary {
+    background: #00d2ff;
+    color: #000;
+    font-weight: 700;
+}
+.modal-btn.primary:hover {
+    background: #4ae1ff;
+    color: #000;
+}
+.modal-btn.danger {
+    background: transparent;
+    border: 1px solid #ff4646;
+    color: #ff4646;
+}
+.modal-btn.danger:hover {
+    background: #ff4646;
+    color: #fff;
+}
+
+/* トースト通知 */
+.toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: rgba(0, 210, 255, 0.2);
+    border: 1px solid #00d2ff;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+.toast.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(20px);
 }
