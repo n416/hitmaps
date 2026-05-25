@@ -1,0 +1,146 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #111116;
+    color: #ffffff;
+    overflow: hidden; /* スクロールバーを隠す */
+    user-select: none;
+}
+
+/* 3D Scene Setup */
+#scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    perspective: 1200px;
+    z-index: 1;
+    overflow: hidden;
+    cursor: grab;
+}
+
+#scene:active {
+    cursor: grabbing;
+}
+
+#camera {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out; /* スムーズな操作感のため少しtransitionを入れる */
+}
+
+/* カメラアニメーション時（ボタン押下時）は長めのtransitionを付与するクラス */
+#camera.animating {
+    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#map-container {
+    position: absolute;
+    top: -1024px;  /* 画像サイズの半分をマイナスして中央に */
+    left: -1024px; /* 後でJSから実際の画像サイズに基づいて調整します */
+    transform-style: preserve-3d;
+    /* デフォルトの画像サイズに合わせて指定（後でJSで動的調整） */
+    width: 2048px;
+    height: 2048px;
+}
+
+#map-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+/* ボトムナビゲーションバー */
+#bottom-bar {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(20, 20, 25, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 30px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.btn {
+    background: transparent;
+    border: none;
+    color: #aaaaaa;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn.active {
+    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4);
+}
+
+.divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 4px;
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+    padding: 6px 14px;
+}
+
+.btn-icon:hover {
+    color: #ff6b6b;
+    background: rgba(255, 70, 70, 0.1);
+}
+
+/* マーカー (拠点案内) のスタイル */
+.marker {
+    position: absolute;
+    /* 回転の軸を要素の中心に設定 */
+    transform-origin: 50% 50%;
+    /* 要素の中心が指定座標に来るように配置し、Z軸に少し浮かせる（ホログラム風） */
+    transform: translate(-50%, -50%) translateZ(40px);
+    background: rgba(10, 10, 15, 0.7);
+    backdrop-filter: blur(6px);
+    border: 2px solid rgba(0, 210, 255, 0.6);
+    color: #ffffff;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(0, 210, 255, 0.2);
+    pointer-events: none; /* マウスドラッグを邪魔しないようにする */
+    user-select: none;
+    /* 地面に張り付いているような立体感を強調 */
+    transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+}

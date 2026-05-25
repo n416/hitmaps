@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIT2 Map Viewer (3D/2D)</title>
+    <link rel="stylesheet" href="map_viewer.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<!-- 邪魔にならない下部ツールバー -->
+<div id="bottom-bar">
+    <button id="btn-topdown" class="btn" title="2D俯瞰">2D</button>
+    <button id="btn-birdseye" class="btn" title="3D鳥瞰">鳥瞰</button>
+    <button id="btn-human" class="btn active" title="3D人間目線">人間目線</button>
+    <div class="divider"></div>
+    <button id="btn-reset" class="btn btn-icon" title="リセット">↺</button>
+</div>
+
+<!-- 3D表示用のコンテナ -->
+<div id="scene">
+    <div id="camera">
+        <div id="map-container">
+            <img src="maps/seibutu.png" id="map-image" alt="Map PVP3 HS Battle">
+            <!-- マーカーはJSで動的に追加されます -->
+        </div>
+    </div>
+</div>
+
+<script src="map_viewer.js"></script>
+</body>
+
+</html>
