@@ -68,11 +68,35 @@ document.addEventListener('DOMContentLoaded', () => {
         let loaded = false;
         if (window.location.hash) {
             try {
-                const encoded = window.location.hash.substring(1);
-                const data = JSON.parse(decodeURIComponent(atob(encoded)));
+                let encoded = window.location.hash.substring(1);
+                let data;
+                if (encoded.startsWith('v2_')) {
+                    encoded = encoded.substring(3);
+                    const binary = atob(encoded);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    data = JSON.parse(new TextDecoder().decode(bytes));
+                } else {
+                    data = JSON.parse(decodeURIComponent(atob(encoded)));
+                }
+
+                // Restore old format or new short format
                 if (data.state) state = { ...state, ...data.state };
+                else if (data.s) {
+                    state.x = data.s[0]; state.y = data.s[1]; state.z = data.s[2];
+                    state.rotateX = data.s[3]; state.rotateZ = data.s[4]; state.scale = data.s[5];
+                }
+
                 if (data.pins) customPins = data.pins;
+                else if (data.p) {
+                    customPins = data.p.map(p => ({ id: p[0], text: p[1], x: p[2], y: p[3], isFlat: !!p[4] }));
+                }
+
                 if (data.arrows) arrows = data.arrows;
+                else if (data.a) {
+                    arrows = data.a.map(a => ({ sx: a[0], sy: a[1], ex: a[2], ey: a[3], cx: a[4], cy: a[5] }));
+                }
+
                 loaded = true;
                 allModeBtns.forEach(b => b.classList.remove('active'));
             } catch(e) { console.error("URL Load failed", e); }
@@ -1183,12 +1207,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnShare.addEventListener('click', () => {
-        const data = {
-            state: state,
-            pins: customPins,
-            arrows: arrows
+        const shortData = {
+            s: [Math.round(state.x), Math.round(state.y), Math.round(state.z), Math.round(state.rotateX), Math.round(state.rotateZ), state.scale],
+            p: customPins.map(p => [p.id, p.text, Math.round(p.x*10)/10, Math.round(p.y*10)/10, p.isFlat ? 1 : 0]),
+            a: arrows.map(a => [Math.round(a.sx*10)/10, Math.round(a.sy*10)/10, Math.round(a.ex*10)/10, Math.round(a.ey*10)/10, Math.round(a.cx*10)/10, Math.round(a.cy*10)/10])
         };
-        const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
+        const jsonStr = JSON.stringify(shortData);
+        const bytes = new TextEncoder().encode(jsonStr);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const encoded = 'v2_' + btoa(binary);
+
         const url = new URL(window.location.href);
         url.hash = encoded;
         
