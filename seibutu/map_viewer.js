@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'enemy_left', label: '敵陣左', top: 27, left: 32 },
         { id: 'enemy_right', label: '敵陣右', top: 27, left: 68 },
         { id: 'center_left', label: '中央左', top: 50, left: 36 },
-        { id: 'center', label: '中央', top: 50, left: 50 },
+        { id: 'center', label: 'ボス', top: 50, left: 50 },
         { id: 'center_right', label: '中央右', top: 50, left: 64 }
     ];
 
