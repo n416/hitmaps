@@ -714,10 +714,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (el.classList.contains('is-flat')) {
                 // 水平（マップ平面にべったり）
-                el.style.transform = `translate(-50%, -50%) translateZ(${zOffset}px)`;
+                el.style.transform = `translate(-50%, -50%) translateZ(${zOffset}px) scale(${currentScale})`;
             } else {
                 // 垂直（カメラ正対のビルボード）
                 el.style.transform = `translate(-50%, -50%) translateZ(${zOffset}px) rotateZ(${-radZ}deg) rotateX(${-radX}deg) scale(${currentScale})`;
+            }
+
+            // フローティングツールバーがある場合、親の向きに関わらず常にカメラを向かせる
+            const tb = el.querySelector('.floating-toolbar');
+            if (tb) {
+                const isPin = tb.classList.contains('pin');
+                const baseTransform = isPin ? 'translateX(-50%) ' : '';
+                if (el.classList.contains('is-flat')) {
+                    // 親が水平なので、ツールバー自身でカメラ方向へ回転させる。地面にめり込まないようZ軸を浮かせる
+                    tb.style.transform = `${baseTransform}translateZ(30px) rotateZ(${-radZ}deg) rotateX(${-radX}deg)`;
+                } else {
+                    tb.style.transform = `${baseTransform}`; 
+                }
             }
         });
     }
@@ -911,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTool === 'pin') {
             if (!tempPinCircle) {
                 tempPinCircle = document.createElement('div');
-                tempPinCircle.className = 'temp-circle';
+                tempPinCircle.className = 'temp-circle is-flat';
                 tempPinCircle.style.left = `${px}%`;
                 tempPinCircle.style.top = `${py}%`;
                 mapContainer.appendChild(tempPinCircle);
@@ -988,15 +1001,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('終点をクリックしてください（ゴミ箱でキャンセル可）');
                 
                 tempArrowCircle = document.createElement('div');
-                tempArrowCircle.className = 'temp-circle';
+                tempArrowCircle.className = 'temp-circle is-flat';
                 tempArrowCircle.style.left = `${px}%`;
                 tempArrowCircle.style.top = `${py}%`;
                 
                 const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'pin-actions';
+                actionsDiv.className = 'floating-toolbar pin';
                 
                 const delBtn = document.createElement('div');
-                delBtn.className = 'pin-action-btn delete';
+                delBtn.className = 'toolbar-action-btn delete';
                 delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                 delBtn.title = '始点をキャンセル';
                 delBtn.addEventListener('pointerdown', (de) => {
@@ -1014,20 +1027,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 arrowEndPoint = { x: px, y: py };
                 
                 if (tempArrowCircle) {
-                    const startActions = tempArrowCircle.querySelector('.pin-actions');
+                    const startActions = tempArrowCircle.querySelector('.floating-toolbar');
                     if (startActions) startActions.style.display = 'none';
                 }
                 
                 tempArrowEndCircle = document.createElement('div');
-                tempArrowEndCircle.className = 'temp-circle';
+                tempArrowEndCircle.className = 'temp-circle is-flat';
                 tempArrowEndCircle.style.left = `${px}%`;
                 tempArrowEndCircle.style.top = `${py}%`;
                 
                 const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'pin-actions';
+                actionsDiv.className = 'floating-toolbar pin';
                 
                 const okBtn = document.createElement('div');
-                okBtn.className = 'pin-action-btn success';
+                okBtn.className = 'toolbar-action-btn success';
                 okBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                 okBtn.title = '確定';
                 okBtn.addEventListener('pointerdown', (de) => {
@@ -1054,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 const delBtn = document.createElement('div');
-                delBtn.className = 'pin-action-btn delete';
+                delBtn.className = 'toolbar-action-btn delete';
                 delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
                 delBtn.title = '終点をキャンセル';
                 delBtn.addEventListener('pointerdown', (de) => {
@@ -1064,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     arrowEndPoint = null;
                     
                     if (tempArrowCircle) {
-                        const startActions = tempArrowCircle.querySelector('.pin-actions');
+                        const startActions = tempArrowCircle.querySelector('.floating-toolbar');
                         if (startActions) startActions.style.display = '';
                     }
                 });
@@ -1075,6 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 makePreviewDraggable(tempArrowEndCircle, false);
                 
                 mapContainer.appendChild(tempArrowEndCircle);
+                applyState();
                 
                 // プレビュー描画
                 const w = mapContainer.offsetWidth;
@@ -1209,7 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     arrowEndPoint = null;
                     
                     if (tempArrowCircle) {
-                        const startActions = tempArrowCircle.querySelector('.pin-actions');
+                        const startActions = tempArrowCircle.querySelector('.floating-toolbar');
                         if (startActions) startActions.style.display = '';
                     }
                 } else if (arrowStartPoint) {

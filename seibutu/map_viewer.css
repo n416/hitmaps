@@ -130,7 +130,7 @@ body {
     /* 要素の中心が指定座標に来るように配置し、Z軸に少し浮かせる（ホログラム風） */
     transform: translate(-50%, -50%) translateZ(40px);
     background: rgba(10, 10, 15, 0.7);
-    backdrop-filter: blur(6px);
+    /* backdrop-filter: blur(6px); removed because it flattens 3D space */
     border: 2px solid rgba(0, 210, 255, 0.6);
     color: #ffffff;
     padding: 15px 30px;
@@ -482,4 +482,8 @@ body {
     opacity: 0;
     pointer-events: none;
     transform: translateX(-50%) translateY(20px);
+}
+
+.marker, .temp-circle, .arrow-anchor, .custom-marker {
+    transform-style: preserve-3d;
 }
