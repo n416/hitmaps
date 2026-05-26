@@ -301,8 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     cBtn.addEventListener('pointerdown', (ce) => {
                         ce.stopPropagation();
                         p.color = cIdx;
+                        selectedObject = null;
                         saveData();
                         renderCustomPins();
+                        renderArrows();
                     });
                     actionsDiv.appendChild(cBtn);
                 });
@@ -585,7 +587,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             cBtn.addEventListener('pointerdown', (ce) => {
                                 ce.stopPropagation();
                                 arr.color = cIdx;
+                                selectedObject = null;
                                 saveData();
+                                renderCustomPins();
                                 renderArrows();
                             });
                             actionsContainer.appendChild(cBtn);
