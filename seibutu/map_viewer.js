@@ -878,17 +878,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (angleDiff < -180) angleDiff += 360;
             state.rotateZ = startStateRotZ + angleDiff;
 
-            // パン処理（2本指の中心の移動量）
+            // パン処理とチルト（2本指の中心の移動量）
             const currentPanX = (pts[0].x + pts[1].x) / 2;
             const currentPanY = (pts[0].y + pts[1].y) / 2;
             const deltaX = currentPanX - initialPanX;
             const deltaY = currentPanY - initialPanY;
             
+            // Y方向の移動は視点の上下（チルト）に割り当てる
+            const tiltSpeed = 0.5;
+            let newRotX = startStateRotX - (deltaY * tiltSpeed);
+            newRotX = Math.max(0, Math.min(85, newRotX));
+            state.rotateX = newRotX;
+
+            // X方向の移動のみをパン（左右移動）として残す
             const rad = state.rotateZ * Math.PI / 180;
             const apparentScale = 1200 / Math.max(100, (1200 - state.z));
             const panSpeed = 1.0 / apparentScale;
-            const moveX = (deltaX * Math.cos(-rad) - deltaY * Math.sin(-rad)) * panSpeed;
-            const moveY = (deltaX * Math.sin(-rad) + deltaY * Math.cos(-rad)) * panSpeed;
+            const moveX = (deltaX * Math.cos(-rad)) * panSpeed;
+            const moveY = (deltaX * Math.sin(-rad)) * panSpeed;
             const tiltCorrection = Math.max(1, Math.cos(state.rotateX * Math.PI / 180));
 
             state.x = startStateX + moveX;
