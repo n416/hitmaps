@@ -845,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 allModeBtns.forEach(b => b.classList.remove('active'));
             } else if (dragMode === 'rotate') {
                 const rotSpeed = 0.5;
-                state.rotateZ = startStateRotZ + (deltaX * rotSpeed);
+                state.rotateZ = startStateRotZ - (deltaX * rotSpeed);
                 let newRotX = startStateRotX - (deltaY * rotSpeed);
                 newRotX = Math.max(0, Math.min(85, newRotX));
                 state.rotateX = newRotX;
