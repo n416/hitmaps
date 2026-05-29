@@ -22,6 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnShare = document.getElementById('btn-share');
     const toast = document.getElementById('toast');
 
+    const isReadonly = new URLSearchParams(window.location.search).has('readonly');
+    if (isReadonly) {
+        const tb = document.getElementById('tool-bar');
+        if (tb) tb.style.display = 'none';
+        if (btnShare) btnShare.style.display = 'none';
+    }
+
     // Modal
     const pinModal = document.getElementById('pin-modal');
     const pinText = document.getElementById('pin-text');
@@ -205,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('keydown', (e) => {
+        if (isReadonly) return;
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
         if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -316,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             el.addEventListener('pointerdown', (e) => {
+                if (isReadonly) return;
                 let toolChanged = false;
                 if (currentTool !== 'move') {
                     selectTool('move');
@@ -469,6 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             g.addEventListener('pointerdown', (e) => {
+                if (isReadonly) return;
                 let toolChanged = false;
                 if (currentTool !== 'move') {
                     selectTool('move');
